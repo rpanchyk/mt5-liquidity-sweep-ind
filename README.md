@@ -1,5 +1,5 @@
 # Forex Liquidity Sweep Indicator for MT5
-Indicator liquidity sweeps in MetaTrader 5.
+Indicator shows liquidity sweeps in MetaTrader 5.
 
 ## Installation
 - Open data folder in MetaTrader from menu `File -> Open Data Folder`.
