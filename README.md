@@ -8,10 +8,14 @@ Indicator shows liquidity sweeps in MetaTrader 5.
 - Drag `LiquiditySweep` indicator on the chart.
 
 ## Configuration
-...
+Available settings of the indicator:
+
+![docs](docs/config.png)
 
 ## Usage
-...
+Make a trade decision using the indicator:
+
+![docs](docs/view.png)
 
 ## Contribution
 Feel free to create an issue or a pull request if any ideas.
