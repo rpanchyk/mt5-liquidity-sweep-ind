@@ -18,7 +18,7 @@ double LiquiditySweepLowBuffer[]; // price of lower liquidity sweep
 
 // config
 input group "Section :: Main";
-input int InpLeftBarsSkip = 1; // Skepped bars to accept liquidity sweep
+input int InpLeftBarsSkip = 1; // Skipped bars to accept liquidity sweep
 
 input group "Section :: Style";
 input color InpHigherLqSwLineColor = clrGreen; // Color of higher liquidity sweep line
