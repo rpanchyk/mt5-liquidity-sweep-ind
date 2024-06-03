@@ -13,12 +13,12 @@
 #property indicator_plots 1
 
 // includes
-#include <Object.mqh>
-#include <arrays/arrayobj.mqh>
+//#include <Object.mqh>
+//#include <arrays/arrayobj.mqh>
 
 // config
 input group "Section :: Main";
-input int InpBarsLimit = 1000; // Bars to search liquidity
+input int InpBarsLimit = 1000; // Bars limit to search liquidity
 input group "Section :: Dev";
 input bool InpDebugEnabled = true; // Endble debug (verbose logging)
 
@@ -86,49 +86,40 @@ int OnCalculate(const int rates_total,
       PrintFormat("RatesTotal: %i, PrevCalculated: %i, Limit: %i", rates_total, prev_calculated, limit);
      }
 
-
-   for(int j = 1; j < InpBarsLimit; j++)
+   for(int i = 1; i < InpBarsLimit - 1; i++)
      {
-      double higherHigh = MathMax(high[j], low[j]);
-      double higherLow = MathMax(open[j], close[j]);
-      double lowerHigh = MathMin(open[j], close[j]);
-      double lowerLow = MathMin(high[j], low[j]);
+      double iHigherHigh = MathMax(high[i], low[i]);
+      double iHigherLow = MathMax(open[i], close[i]);
+      //double iLowerHigh = MathMin(open[i], close[i]);
+      //double iLowerLow = MathMin(high[i], low[i]);
 
-      for(int i = j + 1; i < InpBarsLimit; i++)
+      for(int j = i + 1; j < InpBarsLimit; j++)
         {
-         double iCeil = MathMax(high[i], low[i]);
-         double iFloor = MathMin(high[i], low[i]);
+         double jHigherHigh = MathMax(high[j], low[j]);
+         double jHigherLow = MathMax(open[j], close[j]);
+         double jLowerHigh = MathMin(open[j], close[j]);
+         double jLowerLow = MathMin(high[j], low[j]);
 
-         double iHigherLow = MathMax(open[i], close[i]);
-         double iLowerHigh = MathMin(open[i], close[i]);
-
-         if(iCeil < higherHigh && iCeil > higherLow)
+         if(jHigherHigh < iHigherHigh && jHigherHigh > iHigherLow)
            {
-            if(i - j == 1)
+            Print("Sweep HLQ");
+
+            if(j - i <= 5)
+              {
+               iHigherLow = jHigherHigh;
+               continue;
+              }
+            
+            if(jHigherHigh < MathMax(high[j + 1], low[j + 1]))
               {
                continue;
               }
-            Print("high liq");
 
-            ObjectCreate(0, OBJECT_PREFIX + IntegerToString(i), OBJ_TREND, 0, time[i], iCeil, time[j], iCeil);
-            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_RAY, false);
-            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_COLOR, clrGreen);
+            drawLine(time[j], jHigherHigh, time[i], jHigherHigh, clrBlue);
+            break;
            }
 
-         if(iFloor < lowerHigh && iFloor > lowerLow)
-           {
-            if(i - j == 1)
-              {
-               continue;
-              }
-            Print("low liq");
-
-            ObjectCreate(0, OBJECT_PREFIX + IntegerToString(i), OBJ_TREND, 0, time[i], iFloor, time[j], iFloor);
-            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_RAY, false);
-            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_COLOR, clrRed);
-           }
-
-         if((higherHigh <= iHigherLow && higherHigh >= iLowerHigh) || (lowerLow <= iHigherLow && lowerLow >= iLowerHigh))
+         if(iHigherHigh <= jHigherHigh && iHigherHigh >= jLowerLow)
            {
             Print("break");
             break;
@@ -136,6 +127,70 @@ int OnCalculate(const int rates_total,
         }
      }
 
+
+
+
+//   for(int j = 1; j < InpBarsLimit; j++)
+//     {
+//      double higherHigh = MathMax(high[j], low[j]);
+//      double higherLow = MathMax(open[j], close[j]);
+//      double lowerHigh = MathMin(open[j], close[j]);
+//      double lowerLow = MathMin(high[j], low[j]);
+//
+//      for(int i = j + 1; i < InpBarsLimit; i++)
+//        {
+//         double iCeil = MathMax(high[i], low[i]);
+//         double iFloor = MathMin(high[i], low[i]);
+//
+//         double iHigherLow = MathMax(open[i], close[i]);
+//         double iLowerHigh = MathMin(open[i], close[i]);
+//
+//         if(iCeil < higherHigh && iCeil > higherLow)
+//           {
+//            if(i - j == 1)
+//              {
+//               continue;
+//              }
+//            Print("high liq");
+//
+//            ObjectCreate(0, OBJECT_PREFIX + IntegerToString(i), OBJ_TREND, 0, time[i], iCeil, time[j], iCeil);
+//            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_RAY, false);
+//            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_COLOR, clrGreen);
+//           }
+//
+//         if(iFloor < lowerHigh && iFloor > lowerLow)
+//           {
+//            if(i - j == 1)
+//              {
+//               continue;
+//              }
+//            Print("low liq");
+//
+//            ObjectCreate(0, OBJECT_PREFIX + IntegerToString(i), OBJ_TREND, 0, time[i], iFloor, time[j], iFloor);
+//            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_RAY, false);
+//            ObjectSetInteger(0, OBJECT_PREFIX + IntegerToString(i), OBJPROP_COLOR, clrRed);
+//           }
+//
+//         if((higherHigh <= iHigherLow && higherHigh >= iLowerHigh) || (lowerLow <= iHigherLow && lowerLow >= iLowerHigh))
+//           {
+//            Print("break");
+//            break;
+//           }
+//        }
+//     }
+
    return rates_total;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void drawLine(datetime fromTime, double fromPrice, datetime toTime, double toPrice, color clr)
+  {
+   string objName = OBJECT_PREFIX + TimeToString(toTime);
+   ObjectCreate(0, objName, OBJ_TREND, 0, fromTime, fromPrice, toTime, toPrice);
+   ObjectSetInteger(0, objName, OBJPROP_RAY, false);
+   ObjectSetInteger(0, objName, OBJPROP_COLOR, clr);
+   ObjectSetInteger(0, objName, OBJPROP_STYLE, STYLE_DOT);
   }
 //+------------------------------------------------------------------+
