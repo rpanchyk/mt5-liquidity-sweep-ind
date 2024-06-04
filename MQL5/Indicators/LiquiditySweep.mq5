@@ -9,12 +9,14 @@
 #property description "Indicator shows liquidity sweep"
 
 #property indicator_chart_window
-#property indicator_buffers 2
+#property indicator_buffers 4
 #property indicator_plots 1
 
 // buffers
-double LiquiditySweepHighBuffer[]; // price of higher liquidity sweep
-double LiquiditySweepLowBuffer[]; // price of lower liquidity sweep
+double LiquiditySweepHighPriceBuffer[]; // price of higher liquidity sweep
+double LiquiditySweepHighBarsBuffer[]; // number of bars of higher liquidity sweep
+double LiquiditySweepLowPriceBuffer[]; // price of lower liquidity sweep
+double LiquiditySweepLowBarsBuffer[]; // number of bars of lower liquidity sweep
 
 // config
 input group "Section :: Main";
@@ -39,14 +41,20 @@ int OnInit()
   {
    Print("LiquiditySweep indicator initialization started");
 
-   ArrayInitialize(LiquiditySweepHighBuffer, NULL);
-   ArrayInitialize(LiquiditySweepLowBuffer, NULL);
+   ArrayInitialize(LiquiditySweepHighPriceBuffer, NULL);
+   ArrayInitialize(LiquiditySweepHighBarsBuffer, NULL);
+   ArrayInitialize(LiquiditySweepLowPriceBuffer, NULL);
+   ArrayInitialize(LiquiditySweepLowBarsBuffer, NULL);
 
-   ArraySetAsSeries(LiquiditySweepHighBuffer, true);
-   ArraySetAsSeries(LiquiditySweepLowBuffer, true);
+   ArraySetAsSeries(LiquiditySweepHighPriceBuffer, true);
+   ArraySetAsSeries(LiquiditySweepHighBarsBuffer, true);
+   ArraySetAsSeries(LiquiditySweepLowPriceBuffer, true);
+   ArraySetAsSeries(LiquiditySweepLowBarsBuffer, true);
 
-   SetIndexBuffer(0, LiquiditySweepHighBuffer, INDICATOR_CALCULATIONS);
-   SetIndexBuffer(1, LiquiditySweepLowBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(0, LiquiditySweepHighPriceBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(1, LiquiditySweepHighBarsBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(2, LiquiditySweepLowPriceBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(3, LiquiditySweepLowBarsBuffer, INDICATOR_CALCULATIONS);
 
    Print("LiquiditySweep indicator initialization finished");
    return INIT_SUCCEEDED;
@@ -59,8 +67,8 @@ void OnDeinit(const int reason)
   {
    Print("LiquiditySweep indicator deinitialization started");
 
-   ArrayFree(LiquiditySweepHighBuffer);
-   ArrayFree(LiquiditySweepLowBuffer);
+   ArrayFree(LiquiditySweepHighPriceBuffer);
+   ArrayFree(LiquiditySweepLowPriceBuffer);
 
    if(!MQLInfoInteger(MQL_TESTER))
      {
@@ -129,7 +137,8 @@ int OnCalculate(const int rates_total,
                PrintFormat("Sweep of higher liquidity at %s", TimeToString(time[j]));
               }
 
-            LiquiditySweepHighBuffer[i] = jHigherHigh;
+            LiquiditySweepHighPriceBuffer[i] = jHigherHigh;
+            LiquiditySweepHighBarsBuffer[i] = j - i;
             drawLine(time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
             break;
            }
@@ -166,7 +175,8 @@ int OnCalculate(const int rates_total,
                PrintFormat("Sweep of lower liquidity at %s", TimeToString(time[j]));
               }
 
-            LiquiditySweepLowBuffer[i] = jLowerLow;
+            LiquiditySweepLowPriceBuffer[i] = jLowerLow;
+            LiquiditySweepLowBarsBuffer[i] = j - i;
             drawLine(time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
             break;
            }
