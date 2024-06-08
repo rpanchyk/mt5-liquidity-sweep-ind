@@ -68,7 +68,9 @@ void OnDeinit(const int reason)
    Print("LiquiditySweep indicator deinitialization started");
 
    ArrayFree(LiquiditySweepHighPriceBuffer);
+   ArrayFree(LiquiditySweepHighBarsBuffer);
    ArrayFree(LiquiditySweepLowPriceBuffer);
+   ArrayFree(LiquiditySweepLowBarsBuffer);
 
    if(!MQLInfoInteger(MQL_TESTER))
      {
@@ -109,11 +111,11 @@ int OnCalculate(const int rates_total,
       PrintFormat("RatesTotal: %i, PrevCalculated: %i, Limit: %i", rates_total, prev_calculated, limit);
      }
 
-   for(int i = 1; i < limit - 1; i++)
+   for(int i = 1; i < rates_total - 2; i++)
      {
       double iHigherHigh = MathMax(high[i], low[i]);
       double iHigherLow = MathMax(open[i], close[i]);
-      for(int j = i + 1; j < limit - 1; j++)
+      for(int j = i + 1; j < rates_total - 1; j++)
         {
          double jHigherHigh = MathMax(high[j], low[j]);
          double jHigherLow = MathMax(open[j], close[j]);
@@ -151,7 +153,7 @@ int OnCalculate(const int rates_total,
 
       double iLowerHigh = MathMin(open[i], close[i]);
       double iLowerLow = MathMin(high[i], low[i]);
-      for(int j = i + 1; j < limit - 1; j++)
+      for(int j = i + 1; j < rates_total - 1; j++)
         {
          double jHigherHigh = MathMax(high[j], low[j]);
          double jLowerHigh = MathMin(open[j], close[j]);
