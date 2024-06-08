@@ -111,81 +111,85 @@ int OnCalculate(const int rates_total,
       PrintFormat("RatesTotal: %i, PrevCalculated: %i, Limit: %i", rates_total, prev_calculated, limit);
      }
 
-   for(int i = 1; i < rates_total - 2; i++)
+   for(int i = 1; i < limit; i++)
      {
-      double iHigherHigh = MathMax(high[i], low[i]);
+      double iHigherHigh = high[i];
       double iHigherLow = MathMax(open[i], close[i]);
-      for(int j = i + 1; j < rates_total - 1; j++)
-        {
-         double jHigherHigh = MathMax(high[j], low[j]);
-         double jHigherLow = MathMax(open[j], close[j]);
-         double jLowerLow = MathMin(high[j], low[j]);
-
-         if(jHigherHigh < iHigherHigh && jHigherHigh >= iHigherLow)
-           {
-            if(j - i <= InpLeftBarsSkip)
-              {
-               iHigherLow = jHigherHigh;
-               continue;
-              }
-
-            if(jHigherHigh < MathMax(high[j + 1], low[j + 1]))
-              {
-               continue;
-              }
-
-            if(InpDebugEnabled)
-              {
-               PrintFormat("Sweep of higher liquidity at %s", TimeToString(time[j]));
-              }
-
-            LiquiditySweepHighPriceBuffer[i] = jHigherHigh;
-            LiquiditySweepHighBarsBuffer[i] = j - i;
-            drawLine(time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
-            break;
-           }
-
-         if(iHigherHigh <= jHigherHigh && iHigherHigh >= jLowerLow)
-           {
-            break;
-           }
-        }
-
       double iLowerHigh = MathMin(open[i], close[i]);
-      double iLowerLow = MathMin(high[i], low[i]);
+      double iLowerLow = low[i];
+
+      bool higherLiquiditySweepIdentificationFinished = false;
+      bool lowerLiquiditySweepIdentificationFinished = false;
+
       for(int j = i + 1; j < rates_total - 1; j++)
         {
-         double jHigherHigh = MathMax(high[j], low[j]);
+         double jHigherHigh = high[j];
+         double jHigherLow = MathMax(open[j], close[j]);
          double jLowerHigh = MathMin(open[j], close[j]);
-         double jLowerLow = MathMin(high[j], low[j]);
+         double jLowerLow = low[j];
 
-         if(jLowerLow > iLowerLow && jLowerLow <= iLowerHigh)
+         // Higher liquidity sweep identification
+         if(!higherLiquiditySweepIdentificationFinished)
            {
-            if(j - i <= InpLeftBarsSkip)
+            if(jHigherHigh < iHigherHigh && jHigherHigh >= iHigherLow)
               {
-               jLowerHigh = jLowerLow;
-               continue;
+               bool fractal = jHigherHigh > high[j + 1];
+               bool skip = j - i <= InpLeftBarsSkip;
+               if(skip)
+                 {
+                  iHigherLow = MathMax(iHigherLow, jHigherHigh);
+                 }
+
+               if(fractal && !skip)
+                 {
+                  if(InpDebugEnabled)
+                    {
+                     PrintFormat("Sweep of higher liquidity at %s", TimeToString(time[j]));
+                    }
+
+                  LiquiditySweepHighPriceBuffer[i] = jHigherHigh;
+                  LiquiditySweepHighBarsBuffer[i] = j - i;
+                  drawLine(time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
+                  higherLiquiditySweepIdentificationFinished = true;
+                 }
               }
 
-            if(jLowerLow > MathMin(high[j + 1], low[j + 1]))
+            if(iHigherHigh <= jHigherHigh && iHigherHigh >= jLowerLow)
               {
-               continue;
+               higherLiquiditySweepIdentificationFinished = true;
               }
-
-            if(InpDebugEnabled)
-              {
-               PrintFormat("Sweep of lower liquidity at %s", TimeToString(time[j]));
-              }
-
-            LiquiditySweepLowPriceBuffer[i] = jLowerLow;
-            LiquiditySweepLowBarsBuffer[i] = j - i;
-            drawLine(time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
-            break;
            }
 
-         if(iLowerLow >= jLowerLow && iLowerLow <= jHigherHigh)
+         // Lower liquidity sweep identification
+         if(!lowerLiquiditySweepIdentificationFinished)
            {
-            break;
+            if(jLowerLow > iLowerLow && jLowerLow <= iLowerHigh)
+              {
+               bool fractal = jLowerLow < low[j + 1];
+               bool skip = j - i <= InpLeftBarsSkip;
+               if(skip)
+                 {
+                  iLowerHigh = MathMin(iLowerHigh, jLowerLow);
+                 }
+
+               if(fractal && !skip)
+                 {
+                  if(InpDebugEnabled)
+                    {
+                     PrintFormat("Sweep of lower liquidity at %s", TimeToString(time[j]));
+                    }
+
+                  LiquiditySweepLowPriceBuffer[i] = jLowerLow;
+                  LiquiditySweepLowBarsBuffer[i] = j - i;
+                  drawLine(time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
+                  lowerLiquiditySweepIdentificationFinished = true;
+                 }
+              }
+
+            if(iLowerLow >= jLowerLow && iLowerLow <= jHigherHigh)
+              {
+               lowerLiquiditySweepIdentificationFinished = true;
+              }
            }
         }
      }
