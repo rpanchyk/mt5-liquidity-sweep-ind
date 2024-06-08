@@ -133,14 +133,13 @@ int OnCalculate(const int rates_total,
            {
             if(jHigherHigh < iHigherHigh && jHigherHigh >= iHigherLow)
               {
-               bool fractal = jHigherHigh > high[j + 1];
                bool skip = j - i <= InpLeftBarsSkip;
                if(skip)
                  {
                   iHigherLow = MathMax(iHigherLow, jHigherHigh);
                  }
 
-               if(fractal && !skip)
+               if(!skip && j == iHighest(_Symbol, PERIOD_CURRENT, MODE_HIGH, j - i + 1, i + 1))
                  {
                   if(InpDebugEnabled)
                     {
@@ -150,7 +149,6 @@ int OnCalculate(const int rates_total,
                   LiquiditySweepHighPriceBuffer[i] = jHigherHigh;
                   LiquiditySweepHighBarsBuffer[i] = j - i;
                   drawLine(time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
-                  higherLiquiditySweepIdentificationFinished = true;
                  }
               }
 
@@ -165,14 +163,13 @@ int OnCalculate(const int rates_total,
            {
             if(jLowerLow > iLowerLow && jLowerLow <= iLowerHigh)
               {
-               bool fractal = jLowerLow < low[j + 1];
                bool skip = j - i <= InpLeftBarsSkip;
                if(skip)
                  {
                   iLowerHigh = MathMin(iLowerHigh, jLowerLow);
                  }
 
-               if(fractal && !skip)
+               if(!skip && j == iLowest(_Symbol, PERIOD_CURRENT, MODE_LOW, j - i + 1, i + 1))
                  {
                   if(InpDebugEnabled)
                     {
@@ -182,7 +179,6 @@ int OnCalculate(const int rates_total,
                   LiquiditySweepLowPriceBuffer[i] = jLowerLow;
                   LiquiditySweepLowBarsBuffer[i] = j - i;
                   drawLine(time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
-                  lowerLiquiditySweepIdentificationFinished = true;
                  }
               }
 
