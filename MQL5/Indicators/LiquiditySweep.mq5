@@ -187,6 +187,11 @@ int OnCalculate(const int rates_total,
                lowerLiquiditySweepIdentificationFinished = true;
               }
            }
+
+         if(higherLiquiditySweepIdentificationFinished && lowerLiquiditySweepIdentificationFinished)
+           {
+            break;
+           }
         }
      }
 
