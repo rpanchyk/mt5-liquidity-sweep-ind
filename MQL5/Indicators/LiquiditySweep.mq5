@@ -32,6 +32,7 @@ input int InpForecastBackwardLimit = 1000; // Backward bars limit
 input int InpForecastFractalAdjacentBars = 4; // Fractal adjacent bars count
 input color InpForecastHigherLqLineColor = clrSilver; // Color of higher liquidity line
 input color InpForecastLowerLqLineColor = clrSilver; // Color of lower liquidity line
+input bool InpForecastLqSwAlertEnabled = false; // Alert when liquidity has been swept
 
 input group "Section :: Dev";
 input bool InpDebugEnabled = false; // Endble debug (verbose logging)
@@ -39,6 +40,9 @@ input bool InpDebugEnabled = false; // Endble debug (verbose logging)
 // constants
 const string LQSW_OBJECT_PREFIX = "LQSW_"; // Liquidity sweep object prefix
 const string LQFC_OBJECT_PREFIX = "LQFC_"; // Liquidity forecast object prefix
+
+// runtime
+string prevForecastLiquidities[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -205,6 +209,7 @@ int OnCalculate(const int rates_total,
    if(InpForecastEnabled)
      {
       ObjectsDeleteAll(0, LQFC_OBJECT_PREFIX);
+
       int backwardLimit = MathMin(rates_total - InpForecastFractalAdjacentBars, InpForecastBackwardLimit);
       double highest = high[1];
       double lowest = low[1];
@@ -232,6 +237,51 @@ int OnCalculate(const int rates_total,
 
          highest = high[iHighest(_Symbol, PERIOD_CURRENT, MODE_HIGH, i, 1)];
          lowest = low[iLowest(_Symbol, PERIOD_CURRENT, MODE_LOW, i, 1)];
+        }
+
+
+      if(InpForecastLqSwAlertEnabled)
+        {
+         string forecastLiquidities[];
+         string tmpForecastLiquidityObjectName;
+         for(int i = ObjectsTotal(0, 0, OBJ_TREND); i >= 0 ; i--)
+           {
+            tmpForecastLiquidityObjectName = ObjectName(0, i, 0, OBJ_TREND);
+            if(StringFind(tmpForecastLiquidityObjectName, LQFC_OBJECT_PREFIX, 0) != -1)
+              {
+               ArrayResize(forecastLiquidities, ArraySize(forecastLiquidities) + 1);
+               forecastLiquidities[ArraySize(forecastLiquidities) - 1] = tmpForecastLiquidityObjectName;
+              }
+           }
+
+         for(int i = ArraySize(prevForecastLiquidities) - 1; i >= 0; i--)
+           {
+            bool prevForecastLiquidityFound = false;
+            for(int j = ArraySize(forecastLiquidities) - 1; j >= 0; j--)
+              {
+               if(prevForecastLiquidities[i] == forecastLiquidities[j])
+                 {
+                  prevForecastLiquidityFound = true;
+                  break;
+                 }
+              }
+
+            if(!prevForecastLiquidityFound)
+              {
+               string message = "Liquidity on "
+                                + StringSubstr(prevForecastLiquidities[i], StringLen(LQFC_OBJECT_PREFIX))
+                                + " has been swept at "
+                                + TimeToString(TimeCurrent());
+               Alert(message);
+               if(InpDebugEnabled)
+                 {
+                  Print(message);
+                 }
+              }
+           }
+
+         ArrayResize(prevForecastLiquidities, ArraySize(forecastLiquidities));
+         ArrayCopy(prevForecastLiquidities, forecastLiquidities);
         }
      }
 
