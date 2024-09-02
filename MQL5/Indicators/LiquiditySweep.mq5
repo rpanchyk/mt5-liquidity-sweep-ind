@@ -49,7 +49,10 @@ string prevForecastLiquidities[];
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   Print("LiquiditySweep indicator initialization started");
+   if(InpDebugEnabled)
+     {
+      Print("LiquiditySweep indicator initialization started");
+     }
 
    ArrayInitialize(LiquiditySweepHighPriceBuffer, NULL);
    ArrayInitialize(LiquiditySweepHighBarsBuffer, NULL);
@@ -66,7 +69,10 @@ int OnInit()
    SetIndexBuffer(2, LiquiditySweepLowPriceBuffer, INDICATOR_CALCULATIONS);
    SetIndexBuffer(3, LiquiditySweepLowBarsBuffer, INDICATOR_CALCULATIONS);
 
-   Print("LiquiditySweep indicator initialization finished");
+   if(InpDebugEnabled)
+     {
+      Print("LiquiditySweep indicator initialization finished");
+     }
    return INIT_SUCCEEDED;
   }
 
@@ -75,7 +81,10 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   Print("LiquiditySweep indicator deinitialization started");
+   if(InpDebugEnabled)
+     {
+      Print("LiquiditySweep indicator deinitialization started");
+     }
 
    ArrayFree(LiquiditySweepHighPriceBuffer);
    ArrayFree(LiquiditySweepHighBarsBuffer);
@@ -88,7 +97,10 @@ void OnDeinit(const int reason)
       ObjectsDeleteAll(0, LQFC_OBJECT_PREFIX);
      }
 
-   Print("LiquiditySweep indicator deinitialization finished");
+   if(InpDebugEnabled)
+     {
+      Print("LiquiditySweep indicator deinitialization finished");
+     }
   }
 
 //+------------------------------------------------------------------+
