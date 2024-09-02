@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2024, rpanchyk"
 #property link      "https://github.com/rpanchyk"
-#property version   "1.00"
+#property version   "1.01"
 #property description "Indicator shows liquidity sweep"
 
 #property indicator_chart_window
@@ -21,18 +21,24 @@ double LiquiditySweepLowBarsBuffer[]; // number of bars of lower liquidity sweep
 // config
 input group "Section :: Main";
 input int InpLeftBarsSkip = 1; // Skipped bars to accept liquidity sweep
-
-input group "Section :: Style";
 input color InpHigherLqSwLineColor = clrGreen; // Color of higher liquidity sweep line
 input color InpLowerLqSwLineColor = clrRed; // Color of lower liquidity sweep line
 input ENUM_LINE_STYLE InpLineStyle = STYLE_DOT; // Line style
 input int InpLineWidth = 1; // Line width
 
+input group "Section :: Forecast";
+input bool InpForecastEnabled = true; // Enable forecast of liquidity sweep
+input int InpForecastBackwardLimit = 1000; // Backward bars limit
+input int InpForecastFractalAdjacentBars = 4; // Fractal adjacent bars count
+input color InpForecastHigherLqLineColor = clrSilver; // Color of higher liquidity line
+input color InpForecastLowerLqLineColor = clrSilver; // Color of lower liquidity line
+
 input group "Section :: Dev";
 input bool InpDebugEnabled = false; // Endble debug (verbose logging)
 
 // constants
-const string OBJECT_PREFIX = "LQSW_";
+const string LQSW_OBJECT_PREFIX = "LQSW_"; // Liquidity sweep object prefix
+const string LQFC_OBJECT_PREFIX = "LQFC_"; // Liquidity forecast object prefix
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -74,7 +80,8 @@ void OnDeinit(const int reason)
 
    if(!MQLInfoInteger(MQL_TESTER))
      {
-      ObjectsDeleteAll(0, OBJECT_PREFIX);
+      ObjectsDeleteAll(0, LQSW_OBJECT_PREFIX);
+      ObjectsDeleteAll(0, LQFC_OBJECT_PREFIX);
      }
 
    Print("LiquiditySweep indicator deinitialization finished");
@@ -148,7 +155,7 @@ int OnCalculate(const int rates_total,
 
                   LiquiditySweepHighPriceBuffer[i] = jHigherHigh;
                   LiquiditySweepHighBarsBuffer[i] = j - i;
-                  drawLine(time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
+                  drawLine(LQSW_OBJECT_PREFIX, time[j], jHigherHigh, time[i], jHigherHigh, InpHigherLqSwLineColor);
                  }
               }
 
@@ -178,7 +185,7 @@ int OnCalculate(const int rates_total,
 
                   LiquiditySweepLowPriceBuffer[i] = jLowerLow;
                   LiquiditySweepLowBarsBuffer[i] = j - i;
-                  drawLine(time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
+                  drawLine(LQSW_OBJECT_PREFIX, time[j], jLowerLow, time[i], jLowerLow, InpLowerLqSwLineColor);
                  }
               }
 
@@ -195,15 +202,48 @@ int OnCalculate(const int rates_total,
         }
      }
 
+   if(InpForecastEnabled)
+     {
+      ObjectsDeleteAll(0, LQFC_OBJECT_PREFIX);
+      int backwardLimit = MathMin(rates_total - InpForecastFractalAdjacentBars, InpForecastBackwardLimit);
+      double highest = high[1];
+      double lowest = low[1];
+      for(int i = 1 + InpForecastFractalAdjacentBars; i < backwardLimit; i++)
+        {
+         if(high[i] > highest && isForecastFractal(i))
+           {
+            if(InpDebugEnabled)
+              {
+               PrintFormat("Forecast of higher liquidity at %s", TimeToString(time[i]));
+              }
+
+            drawLine(LQFC_OBJECT_PREFIX, time[i], high[i], time[0], high[i], InpForecastHigherLqLineColor);
+           }
+
+         if(low[i] < lowest && isForecastFractal(i))
+           {
+            if(InpDebugEnabled)
+              {
+               PrintFormat("Forecast of lower liquidity at %s", TimeToString(time[i]));
+              }
+
+            drawLine(LQFC_OBJECT_PREFIX, time[i], low[i], time[0], low[i], InpForecastLowerLqLineColor);
+           }
+
+         highest = high[iHighest(_Symbol, PERIOD_CURRENT, MODE_HIGH, i, 1)];
+         lowest = low[iLowest(_Symbol, PERIOD_CURRENT, MODE_LOW, i, 1)];
+        }
+     }
+
    return rates_total;
   }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void drawLine(datetime fromTime, double fromPrice, datetime toTime, double toPrice, color clr)
+void drawLine(string objPrefix, datetime fromTime, double fromPrice, datetime toTime, double toPrice, color clr)
   {
-   string objName = OBJECT_PREFIX + TimeToString(fromTime);
+   string objName = objPrefix + TimeToString(fromTime);
    ObjectCreate(0, objName, OBJ_TREND, 0, fromTime, fromPrice, toTime, toPrice);
    ObjectSetInteger(0, objName, OBJPROP_RAY, false);
    ObjectSetInteger(0, objName, OBJPROP_COLOR, clr);
@@ -214,5 +254,14 @@ void drawLine(datetime fromTime, double fromPrice, datetime toTime, double toPri
    ObjectSetInteger(0, objName, OBJPROP_SELECTED, false);
    ObjectSetInteger(0, objName, OBJPROP_HIDDEN, false);
    ObjectSetInteger(0, objName, OBJPROP_ZORDER, 0);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool isForecastFractal(int i)
+  {
+   return i == iHighest(_Symbol, PERIOD_CURRENT, MODE_HIGH, InpForecastFractalAdjacentBars * 2 + 1, i - InpForecastFractalAdjacentBars)
+          || i == iLowest(_Symbol, PERIOD_CURRENT, MODE_LOW, InpForecastFractalAdjacentBars * 2 + 1, i - InpForecastFractalAdjacentBars);
   }
 //+------------------------------------------------------------------+
